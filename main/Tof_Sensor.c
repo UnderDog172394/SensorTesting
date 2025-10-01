@@ -3,7 +3,9 @@
 #include "freertos/task.h"
 #include "driver/i2c.h"
 #include "vl53l7cx_api.h"
-
+#include "driver/ledc.h"
+#include "nvs_flash.h"
+#include "nvs.h"
 
 // I2C settings
 #define I2C_MASTER_SCL_IO           22
