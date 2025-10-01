@@ -1,0 +1,17 @@
+dependencies:
+  idf:
+    source:
+      type: idf
+    version: 5.5.1
+  vl53l7cx:
+    dependencies: []
+    source:
+      path: C:\Users\jt825\OneDrive\Documents\VSCode\ToF Sensor\components\vl53l7cx
+      type: local
+    version: 1.0.0
+direct_dependencies:
+- idf
+- vl53l7cx
+manifest_hash: 28d13f2fce05bf8cc3b4d026eea5b006720926f3f2224c4c94ad874ab3d3e9c3
+target: esp32
+version: 2.0.0

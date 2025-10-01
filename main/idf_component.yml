@@ -1,0 +1,5 @@
+dependencies:
+  
+  #VL53L7CX-Library
+  vl53l7cx:
+    git: https://github.com/twistx77/V53L7CX-Library.git
