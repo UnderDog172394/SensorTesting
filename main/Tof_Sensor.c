@@ -3,6 +3,7 @@
 #include "freertos/task.h"
 #include "driver/i2c.h"
 #include "vl53l7cx_api.h"
+#include "mpu6050.h"
 #include "driver/ledc.h"
 #include "esp_spiffs.h"
 #include "driver/gpio.h"
