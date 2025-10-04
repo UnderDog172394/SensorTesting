@@ -39,6 +39,9 @@ void app_main(void)
 {
     uint8_t status, is_ready;
     VL53L7CX_ResultsData results;
+    
+    // *** FIX: Declare the handle for the MPU6050 sensor ***
+    mpu6050_handle_t mpu6050_dev = NULL; 
 
     // --- Initialization ---
     ESP_ERROR_CHECK(i2c_master_init());
@@ -51,19 +54,23 @@ void app_main(void)
         return;
     }
 
-    // Set 8x8 resolution
     status = vl53l7cx_set_resolution(&Sensor_Config, VL53L7CX_RESOLUTION_8X8);
     if (status) {
         printf("vl53l7cx_set_resolution failed, status: %u\n", status);
         return;
     }
 
-    // Set the ranging frequency to the maximum for 8x8 mode (15 Hz)
     status = vl53l7cx_set_ranging_frequency_hz(&Sensor_Config, 15);
     if (status) {
         printf("vl53l7cx_set_ranging_frequency_hz failed, status: %u\n", status);
         return;
     }
+
+    // MPU6050 Sensor Initialization
+    mpu6050_dev = mpu6050_create(I2C_MASTER_NUM, MPU6050_I2C_ADDRESS);
+    ESP_ERROR_CHECK(mpu6050_wake_up(mpu6050_dev));
+    ESP_ERROR_CHECK(mpu6050_config(mpu6050_dev, ACCE_FS_2G, GYRO_FS_250DPS));
+    printf("MPU6050 initialized successfully!\n");
 
     // --- Start Ranging ---
     status = vl53l7cx_start_ranging(&Sensor_Config);
@@ -71,8 +78,7 @@ void app_main(void)
         printf("vl53l7cx_start_ranging failed, status: %u\n", status);
         return;
     }
-    // Print some initial newlines to make space for the updating frame
-    printf("\n\n\n\n\n\n\n\n\n\n");
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\n\n"); // Make space
 
     bool first_frame = true;
 
@@ -82,38 +88,35 @@ void app_main(void)
         if (status == 0 && is_ready) {
             
             if (!first_frame) {
-                printf("\033[10A"); // Moves cursor up 10 lines
+                // *** FIX: Adjust cursor move for the combined display size ***
+                printf("\033[15A"); 
             }
             first_frame = false;
             
+            // --- Get VL53L7CX Data ---
             vl53l7cx_get_ranging_data(&Sensor_Config, &results);
+            
+            // *** FIX: Declare structs AND get the MPU6050 data ***
+            mpu6050_acce_value_t acce;
+            mpu6050_gyro_value_t gyro;
+            ESP_ERROR_CHECK(mpu6050_get_acce(mpu6050_dev, &acce));
+            ESP_ERROR_CHECK(mpu6050_get_gyro(mpu6050_dev, &gyro));
 
-            printf("--- VL53L7CX Depth Map ---\n");
+            // --- Print Combined Display ---
             for (int i = 0; i < 64; i++) {
-                
-                // *** NEW: Logic to choose character based on distance ***
-                int distance = results.distance_mm[i];
-                char display_char = ' '; // Default to a space
-
-                if (distance > 0 && distance < 250) {
-                    display_char = '#'; // Very close
-                } else if (distance < 500) {
-                    display_char = '&'; // Close
-                } else if (distance < 1000) {
-                    display_char = '*'; // Medium
-                } else if (distance < 1600) {
-                    display_char = '.'; // Far
-                }
-                
-                // Print the character twice to make the "pixel" more square
-                printf("%c%c ", display_char, display_char);
-
+                printf("%4d ", results.distance_mm[i]);
                 if ((i + 1) % 8 == 0) {
                     printf("\n");
                 }
             }
+            
+            printf("--------------------------------------------------\n");
+            printf("MPU6050 Accel: X=%6.2f | Y=%6.2f | Z=%6.2f\n", acce.acce_x, acce.acce_y, acce.acce_z);
+            printf("MPU6050 Gyro:  X=%6.2f | Y=%6.2f | Z=%6.2f\n", gyro.gyro_x, gyro.gyro_y, gyro.gyro_z);
             printf("\n");
         }
+        
+        
         
         vTaskDelay(pdMS_TO_TICKS(20)); 
     }
